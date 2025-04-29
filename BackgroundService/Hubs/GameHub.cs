@@ -8,41 +8,39 @@ using Microsoft.AspNetCore.SignalR;
 namespace BackgroundService.Hubs
 {
     [Authorize]
-    public class GameHub : Hub
+    public class GameHub(Game game, BackgroundServiceContext backgroundServiceContext)
+        : Hub
     {
-        private Game _game;
-        private BackgroundServiceContext _backgroundServiceContext;
-
-        public GameHub(Game game, BackgroundServiceContext backgroundServiceContext)
-        {
-            _game = game;
-            _backgroundServiceContext = backgroundServiceContext;
-        }
-
         public override async Task OnConnectedAsync()
         {
             await base.OnConnectedAsync();
-            _game.AddUser(Context.UserIdentifier!);
+            game.AddUser(Context.UserIdentifier!);
 
-            Player player = _backgroundServiceContext.Player.Where(p => p.UserId == Context.UserIdentifier!).Single();
+            Player player = backgroundServiceContext.Player.Single(p => p.UserId == Context.UserIdentifier!);
 
-            await Clients.Caller.SendAsync("GameInfo", new GameInfoDTO()
+            await Clients.Caller.SendAsync("GameInfo", new GameInfoDto
             {
+                NbWins = player.NbWins,
+                MultiplierCost = Game.MULTIPLIER_BASE_PRICE,
                 // TODO: Remplir l'information avec les 2 nouveaux features (nbWins et multiplierCost)
             });
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            _game.RemoveUser(Context.UserIdentifier!);
+            game.RemoveUser(Context.UserIdentifier!);
             await base.OnDisconnectedAsync(exception);
         }
 
         public void Increment()
         {
-            _game.Increment(Context.UserIdentifier!);
+            game.Increment(Context.UserIdentifier!);
         }
 
         // Ajouter une méthode pour pouvoir acheter un multiplier
+        public async Task BuyMultiplier()
+        {
+            await game.BuyMultiplier(Context.UserIdentifier!, Context.ConnectionId);
+        }
     }
 }

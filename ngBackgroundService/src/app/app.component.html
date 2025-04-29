@@ -1,40 +1,73 @@
-<div style="width:400px" class="container">
+<div style="width: 400px" class="container">
   <form class="borderedZone">
     <div class="loginZone" *ngIf="!isLoggedIn()">
-      <mat-form-field  style="width: 100%;">
+      <mat-form-field style="width: 100%">
         <mat-label>Nom d'usager</mat-label>
-        <input matInput type="text" [(ngModel)]="account.username" name="username"/>
+        <input
+          matInput
+          type="text"
+          [(ngModel)]="account.username"
+          name="username"
+        />
       </mat-form-field>
     </div>
     <div class="loginZone" *ngIf="isLoggedIn()">
-      <div style="padding-top: 24px;">Bonjour <b>{{account.username}}!</b></div>
+      <div style="padding-top: 24px">
+        Bonjour <b>{{ account.username }}!</b>
+      </div>
     </div>
     <div *ngIf="!isLoggedIn()">
-      <button mat-raised-button color="primary" (click)="register()">Enregistrer</button>
+      <button mat-raised-button color="primary" (click)="register()">
+        Enregistrer
+      </button>
       <button mat-raised-button color="accent" (click)="login()">Login</button>
     </div>
     <div *ngIf="isLoggedIn()">
-      <button mat-raised-button color="accent" (click)="logout()">Logout</button>
+      <button mat-raised-button color="accent" (click)="logout()">
+        Logout
+      </button>
     </div>
   </form>
 
-  <div class="borderedZone" *ngIf="isLoggedIn()" style="margin-top: 32px; height: 130px">
+  <div
+    class="borderedZone"
+    *ngIf="isLoggedIn()"
+    style="margin-top: 32px; height: 130px"
+  >
     <div *ngIf="!isConnected">
-      <div >Pas connecté au Hub..</div>
-      <br>
+      <div>Pas connecté au Hub..</div>
+      <br />
       <div>
-        <button mat-raised-button color="primary" (click)="connectToHub()">Connecter au Hub</button>
+        <button mat-raised-button color="primary" (click)="connectToHub()">
+          Connecter au Hub
+        </button>
       </div>
     </div>
     <div *ngIf="isConnected">
-
-      <div >Connecté! <!-- TODO: Afficher le nb de wins--></div>
-      <br>
       <div>
-        <button mat-raised-button color="primary" (click)="Increment()">Cliquer</button>
-        Clicks dans ce round: <b>{{nbClicks}}</b>
+        Connecté!
+        <!-- TODO: Afficher le nb de wins-->
+        Nombre de victoires : <b>{{ nbWins }}</b>
+      </div>
+      <br />
+      <div>
+        <button mat-raised-button color="primary" (click)="increment()">
+          Cliquer
+        </button>
+        Clicks dans ce round: <b>{{ nbClicks }}</b>
       </div>
       <!-- Permettre d'acheter un multiplier et afficher le multiplier actuel -->
+      <div>
+        <button
+          mat-raised-button
+          color="secondary"
+          (click)="buyMultiplier()"
+          [disabled]="nbClicks < multiplierCost"
+        >
+          Acheter pour {{ multiplierCost }}$
+        </button>
+        Multiplicateur actuel: <b>{{ multiplier }}</b>
+      </div>
     </div>
   </div>
 </div>

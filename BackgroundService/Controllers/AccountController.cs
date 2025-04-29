@@ -7,24 +7,18 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace BackgroundService.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    public class AccountController : ControllerBase
+    public class AccountController(
+        UserManager<IdentityUser> userManager,
+        SignInManager<IdentityUser> signInManager,
+        BackgroundServiceContext context)
+        : ControllerBase
     {
-        readonly UserManager<IdentityUser> UserManager;
-        readonly SignInManager<IdentityUser> SignInManager;
-        readonly BackgroundServiceContext _context;
-
-        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, BackgroundServiceContext context)
-        {
-            UserManager = userManager;
-            SignInManager = signInManager;
-            _context = context;
-        }
-
         [HttpPost]
         public async Task<ActionResult> Register(RegisterDTO register)
         {
@@ -38,21 +32,22 @@ namespace BackgroundService.Controllers
                 UserName = register.Username,
                 Email = register.Email
             };
-            IdentityResult identityResult = await this.UserManager.CreateAsync(user, register.Password);
+            IdentityResult identityResult = await userManager.CreateAsync(user, register.Password);
             if (!identityResult.Succeeded)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new { Message = "La création de l'utilisateur a échoué." });
             }
 
-            var player = new Player()
+            Player player = new()
             {
                 Id = 0,
-                User = user
+                User = user,
+                UserId = user.Id,
             };
 
-            _context.Player.Add(player);
-            _context.SaveChanges();
+            context.Player.Add(player);
+            await context.SaveChangesAsync();
 
             return Ok(new { Message = "Inscription réussie ! 🥳" });
         }
@@ -60,22 +55,24 @@ namespace BackgroundService.Controllers
         [HttpPost]
         public async Task<ActionResult> Login(LoginDTO login)
         {
-            var result = await SignInManager.PasswordSignInAsync(login.Username, login.Password, true, lockoutOnFailure: false);
+            SignInResult result = await signInManager.PasswordSignInAsync(login.Username, login.Password, true, lockoutOnFailure: false);
             if (result.Succeeded)
             {
                 Claim? nameIdentifierClaim = User.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
 
                 // Note: On ajoute simplement le NameIdentifier dans les claims. Il n'y aura pas de rôle pour les utilisateurs du WebAPI.
-                List<Claim> authClaims = new List<Claim>();
-                authClaims.Add(nameIdentifierClaim);
+                List<Claim> authClaims =
+                [
+                    nameIdentifierClaim
+                ];
 
-                SymmetricSecurityKey signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("C'est tellement la meilleure cle qui a jamais ete cree dans l'histoire de l'humanite (doit etre longue)"));
+                SymmetricSecurityKey signingKey = new("C'est tellement la meilleure cle qui a jamais ete cree dans l'histoire de l'humanite (doit etre longue)"u8.ToArray());
 
-                string issuer = this.Request.Scheme + "://" + this.Request.Host;
+                string issuer = Request.Scheme + "://" + Request.Host;
 
                 DateTime expirationTime = DateTime.Now.AddMinutes(30);
 
-                JwtSecurityToken token = new JwtSecurityToken(
+                JwtSecurityToken token = new(
                     issuer: issuer,
                     audience: null,
                     claims: authClaims,

@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: bd-background-service
+    environment:
+      POSTGRES_USER: bobby_kenobi
+      POSTGRES_PASSWORD: Passw0rd!
+      POSTGRES_DB: mabd
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U bobby_kenobi -d mabd" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
