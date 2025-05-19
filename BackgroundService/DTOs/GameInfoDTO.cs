@@ -6,5 +6,6 @@ namespace BackgroundService.DTOs
     {
         // TODO: Include l'information à propos du nombre de victoire ET le coût d'un multiplier
         public int NbWins { get; set; }
+        public int MultiplierCost { get; set; }
     }
 }
