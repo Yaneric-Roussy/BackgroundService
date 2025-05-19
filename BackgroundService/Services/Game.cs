@@ -12,6 +12,7 @@ namespace BackgroundService.Services
     {
         public int Score { get; set; } = 0;
         // TODO: Ajouter une propriété pour le multiplier
+        //public int Multiplier { get; set; }
     }
 
     public class Game : Microsoft.Extensions.Hosting.BackgroundService
@@ -105,6 +106,15 @@ namespace BackgroundService.Services
                     Winners = users.Select(p => p.UserName)!,
                     NbClicks = biggestValue
                 };
+
+                foreach(IdentityUser user in users)
+                {
+                    Player player = await backgroundServiceContext.Player.FirstAsync(p => p.UserId == user.Id);
+                    player.NbWins++;
+                }
+
+                await backgroundServiceContext.SaveChangesAsync();
+
                 await _gameHub.Clients.All.SendAsync("EndRound", roundResult, stoppingToken);
             }
         }
